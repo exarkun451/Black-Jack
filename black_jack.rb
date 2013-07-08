@@ -1,60 +1,62 @@
-#player over 21 forces winning
-#query for game repeat
-#multiplayer
 class Black_Jack
-	puts "Welcome to Blackjack!"
 def initialize name
-	@name = name
 	card_suits = ['Clubs','Spades','Diamonds','Hearts']
 	card_values = ['2','3','4','5','6','7','8','9','10','Jack','Queen','King','Ace']
-	@deck = card_suits.product(card_values)
+	@@deck = card_suits.product(card_values)
+	@@deck.shuffle!
+	@@computer = []
+	2.times {@@computer << @@deck.pop}
+	@name = name
 	@player = []
 	@computer = []
-	@deck.shuffle!
 	@total = 0
 	2.times do 
-		@player << @deck.pop
-		@computer << @deck.pop
+		@player << @@deck.pop
 	end
 	puts "#{@name}, you were dealt: "
-	show @player
+	show_player
 end
 
-def next_move (response)
-		if response == 1
-			hit @player
-			dealer_turn @computer
-		elsif response == 2
-			show @player
-		elsif response == 3
-			opponent_hand @computer
-		elsif response == 4
-			calculate_winner(@player, @computer)
-		else
-			puts "Oops!"
-			puts "Press 1 ..... Hit" 
-			puts "Press 2...... Your current hand!"
-			puts "Press 3...... See the competition!"
-			puts "Press 4...... Show your cards!"
-		end
+def options
+		puts "What is your next move #{@name}?"
+		puts "Press 1 ..... Hit" 
+		puts "Press 2...... Your current hand!"
+		puts "Press 3...... See the competition!"
+		puts "Press 4...... Show your cards!"
+		puts "Press 5...... Pass your turn"
 end
 
-def hit (hand)
-	hand << @deck.pop
-	dealt_card = hand[-1]
-	puts "#{@name}, you were dealt a #{dealt_card[1]} of #{dealt_card[0]}"
+def error
+		puts "Oops!"
+		puts "Press 1 ..... Hit" 
+		puts "Press 2...... Your current hand!"
+		puts "Press 3...... See the competition!"
+		puts "Press 4...... Show your cards!"
+		puts "Press 5...... Pass your turn!"
 end
 
-def show(hand)
-	hand.each do |suit, value|
+def hit
+	total = calculate (@player)
+	if total < 21
+		@player << @@deck.pop
+		dealt_card = @player[-1]
+		puts "#{@name}, you were dealt a #{dealt_card[1]} of #{dealt_card[0]}"
+	else
+		puts "I'm sorry! But I can't let you keep hitting. You already have #{total}"
+	end
+end
+
+def show_player
+	puts "Your current cards are:"
+	@player.each do |suit, value|
 		puts "#{value} of #{suit}"
 	end
 end
 
-def opponent_hand (hand)
-	first_card = hand[0]
+def opponent_hand
+	first_card = @@computer[0]
 	puts "You see: a #{first_card[1]} of #{first_card[0]}"
-	other_cards = hand.length - 1
+	other_cards = @@computer.length - 1
 	puts "and #{other_cards} facedown"
 end
 
@@ -77,29 +79,39 @@ def calculate (hand)
 		@total = total
 end
 
-def dealer_turn (hand)
-	calculate hand
+def pass
+	puts "You pass your turn..."
+end
+
+def dealer_turn
+	calculate @@computer
 	if @total < 17
-		@computer << @deck.pop
+		puts "... Dealer hits!"
+		@@computer << @@deck.pop
 	end
 end
 
-def calculate_winner(player, computer)
+def calculate_winner
 	win = "YOU WIN!!!"
 	lose = "Unfortunately, the computer beat you!"
 	tie = "Dang, a tie!"
-	player_total = calculate player
-	computer_total = calculate computer
+	player_total = calculate @player
+	computer_total = calculate @@computer
+	puts
+	puts "------SCOREBOARD------"
+	puts 
+	puts "Dealers hand was:" 
+		@@computer.each do |suit, value|
+		puts "#{value} of #{suit}"
+	end
+	puts "For a total of: #{computer_total}"
 	puts
 	puts
-	puts "Dealers hand was" 
-	show computer
-	puts "For a total of #{computer_total}"
-	puts
-	puts
-	puts "Your hand was" 
-	show player
-	puts "For a total of #{player_total}"
+	puts "Your hand was:" 
+	@player.each do |suit, value|
+		puts "#{value} of #{suit}"
+	end
+	puts "For a total of: #{player_total}"
 	if player_total == 21 && computer_total == 21
 		puts tie + "... and both of you got Black Jack!"
 	elsif player_total == 21 && computer_total != 21
@@ -120,30 +132,59 @@ def calculate_winner(player, computer)
 		puts "a strange situation..."
 	end
 end
+
+def end?
+	while true
+	puts "Would you like to play again?(Y/N)"
+		response = gets.chomp
+	if response.downcase == 'n'
+		puts "Thanks for playing!"
+		exit
+	elsif response.downcase == 'y'
+		puts "Will the same person be playing?(Y/N)"
+		response = gets.chomp
+		if response.downcase == 'y'
+			initialize(@name)
+			break
+		elsif response.downcase == 'n'
+			puts "Well then, welcome to Black Jack!"
+			puts "Please enter the new person to be playing!"
+			response = gets.chomp
+			initialize(response)
+			break
+		else
+			puts "Oops! I don't understand you."
+		end
+	else
+		puts "Oops! I don't understand you."
+	end
+	end
+end
 end
 
 
 puts "Welcome to Black Jack!"
 puts "Please enter your name!"
-name = gets.chomp
+player = gets.chomp
+game = Black_Jack.new player
 while true
-	game = Black_Jack.new "#{name}"
-	while true
-		puts "What is your next move #{name}?"
-		puts "Press 1 ..... Hit" 
-		puts "Press 2...... Your current hand!"
-		puts "Press 3...... See the competition!"
-		puts "Press 4...... Show your cards!"
-		response = gets.chomp.to_i
-		game.next_move(response)
-		if response.to_i == 4
-			break
-		end
+	game.options
+	response = gets.chomp.to_i
+	case response
+	when 1
+		game.hit
+		game.dealer_turn
+	when 2
+		game.show_player
+	when 3
+		game.opponent_hand
+	when 4
+		game.calculate_winner
+		game.end?
+	when 5
+		game.pass
+		game.dealer_turn
+	else
+		game.error
 	end
-	puts "Would you like to play again?(Y/N)"
-		response = gets.chomp
-	if response.downcase == 'n'
-		puts "Thanks for playing!"
-		break
-end
 end
