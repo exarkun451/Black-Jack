@@ -1,6 +1,10 @@
 class Multiplayer
 	def initialize players
-		@@continue = false
+		card_suits = ['Clubs','Spades','Diamonds','Hearts']
+		card_values = ['2','3','4','5','6','7','8','9','10','Jack','Queen','King','Ace']
+		@@deck = card_suits.product(card_values)
+		@@deck.shuffle!
+		@@computer_total = 0
 		@number = players
 		@player1_game = 0
 		@player2_game = 0
@@ -9,57 +13,74 @@ class Multiplayer
 		end
 
 	def get_players
+		@computer_game = Black_Jack.new "Dealer"
 		if @number == 1
 			puts "Please enter the name of the player"
 			new_name = gets.chomp
 			@player1_game = Black_Jack.new new_name
+			@player1_game.initial_show
 		end
 		if @number > 1
 			puts "Please enter the first player"
 			new_name = gets.chomp
 			@player1_game = Black_Jack.new new_name
+			@player1_game.initial_show
 		end
 		if @number >= 2
 			puts "Please enter the second player"
 			new_name = gets.chomp
 			@player2_game = Black_Jack.new new_name
+			@player2_game.initial_show
 		end
 		if @number >= 3
 			puts "Please enter the third player"
 			new_name = gets.chomp
 			@player3_game = Black_Jack.new new_name
+			@player3_game.initial_show
 		end
 		if @number >= 4
 			puts "Please enter the fourth player"
 			new_name = gets.chomp
 			@player4_game = Black_Jack.new new_name
+			@player4_game.initial_show
 		end
 	end
 
 	def which_round?
 		if @number == 1
-			@player1_game.next_move_single_player
+			@computer_game.dealer_turn
+			@player1_game.next_move
 		elsif @number == 2
+			@computer_game.dealer_turn
 			@player1_game.next_move
 			@player2_game.next_move
 		elsif @number == 3
+			@computer_game.dealer_turn
 			@player1_game.next_move
 			@player2_game.next_move
 			@player3_game.next_move
 		elsif @number == 4
+			@computer_game.dealer_turn
 			@player1_game.next_move
 			@player2_game.next_move
 			@player3_game.next_move
 			@player4_game.next_move
 		else
-			puts "oops! Something went very wrong."
+			puts "oops! Something went very wrong. Try again."
 			exit
 	end
 	end
 
 	def all_complete?
-		if @number == 2
+		if @number == 1
+			if @player1_game.game_finished == true
+				@computer_game.display_computer_total
+				@player1_game.calculate_winner
+				end?
+			end
+		elsif @number == 2
 			if @player1_game.game_finished == true && @player2_game.game_finished == true
+				@computer_game.display_computer_total
 				@player1_game.calculate_winner
 				@player2_game.calculate_winner
 				end?
@@ -67,6 +88,7 @@ class Multiplayer
 		elsif @number == 3
 			if @player1_game.game_finished == true && @player2_game.game_finished == true ;
 				@player3_game.game_finished == true
+				@computer_game.display_computer_total
 				@player1_game.calculate_winner
 				@player2_game.calculate_winner
 				@player3_game.calculate_winner
@@ -75,6 +97,7 @@ class Multiplayer
 		elsif @number == 4
 			if @player1_game.game_finished == true && @player2_game.game_finished == true ;
 				@player3_game.game_finished == true && @player4_game.game_finished == true
+				@computer_game.display_computer_total
 				@player1_game.calculate_winner
 				@player2_game.calculate_winner
 				@player3_game.calculate_winner
@@ -92,7 +115,7 @@ class Multiplayer
 			puts "Thanks for playing!"
 			exit
 		elsif response.downcase == 'y'
-		puts "How many people are playing?"
+		puts "How many people are playing? Enter 1-4"
 		player_num = gets.chomp
 		initialize(player_num.to_i)
 		get_players
@@ -111,23 +134,14 @@ end
 
 class Black_Jack < Multiplayer
 def initialize name
-	card_suits = ['Clubs','Spades','Diamonds','Hearts']
-	card_values = ['2','3','4','5','6','7','8','9','10','Jack','Queen','King','Ace']
-	@@deck = card_suits.product(card_values)
-	@@deck.shuffle!
-	@@computer = []
-	2.times {@@computer << @@deck.pop}
 	@name = name
 	@player = []
-	#### This next line is for use in the multiplayer ####
 	@skip = false
 	@game_finished = false
-	#### 
 	@total = 0
 	2.times do 
 		@player << @@deck.pop
 	end
-	initial_show
 end
 
 def options
@@ -204,39 +218,14 @@ def pass
 end
 
 def dealer_turn
-	calculate @@computer
+	calculate @player
 	if @total < 17
 		puts "... Dealer hits!"
-		@@computer << @@deck.pop
-	end
-end
-
-def next_move_single_player
-		while true
-		puts options
-		response = gets.chomp.to_i
-		case response
-		when 1
-			hit
-			dealer_turn
-		when 2
-			show_player
-		when 3
-			opponent_hand
-		when 4
-			calculate_winner
-			end?
-		when 5
-			pass
-			dealer_turn
-		else
-			error
-		end
+		@player << @@deck.pop
 	end
 end
 
 def next_move
-
 		if @skip == false
 		while true
 			puts options
@@ -244,6 +233,7 @@ def next_move
 			case response
 			when 1
 				hit
+				dealer_turn
 				break
 			when 2
 				show_player
@@ -255,6 +245,7 @@ def next_move
 				break
 			when 5
 				pass
+				dealer_turn
 				break
 			else
 				error
@@ -270,21 +261,27 @@ def game_finished
   end
 end
 
+def display_computer_total
+	computer_total = calculate @player
+	@@computer_total = computer_total
+	puts
+	puts "------SCOREBOARD------"
+	puts 
+	puts "#{@name}s hand was:" 
+		@player.each do |suit, value|
+		print "|#{value} of #{suit}|  "
+	end
+	puts "For a total of: #{computer_total}"
+	puts
+	puts
+end
+
 def calculate_winner
 	win = "YOU WIN!!!"
 	lose = "Unfortunately, the computer beat you!"
 	tie = "Dang, a tie!"
 	player_total = calculate @player
-	computer_total = calculate @@computer
-	puts
-	puts "------SCOREBOARD------"
-	puts 
-	puts "Dealers hand was:" 
-		@@computer.each do |suit, value|
-		print "|#{value} of #{suit}|  "
-	end
-	puts "For a total of: #{computer_total}"
-	puts
+	computer_total = @@computer_total
 	puts
 	puts "#{@name}, your hand was:" 
 	@player.each do |suit, value|
@@ -294,9 +291,9 @@ def calculate_winner
 	if player_total == 21 && computer_total == 21
 		puts tie + "... and both of you got Black Jack!"
 	elsif player_total == 21 && computer_total != 21
-		puts win 
+		puts win + "BLACK JACK!!!"
 	elsif player_total != 21 && computer_total == 21
-	  puts lose
+	  puts lose 
 	elsif player_total > 21 && computer_total <= 21
 		puts lose
 	elsif player_total <= 21 && computer_total > 21
@@ -315,7 +312,7 @@ end
 
 
 puts "Welcome to Black Jack!"
-puts "How many people are playing?"
+puts "How many people are playing? Enter 1-4"
 player_num = gets.chomp
 board = Multiplayer.new player_num.to_i
 board.get_players
